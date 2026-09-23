@@ -115,11 +115,54 @@ function Write-SelfTestImage {
     foreach ($i in 1..12) { $rectX.Add(732.0 - 46.0 * $i); $rectY.Add(778.0) }
     foreach ($i in 1..6) { $rectX.Add(180.0); $rectY.Add(778.0 - 43.0 * $i) }
 
+    $openCircleX = New-Object System.Collections.Generic.List[double]
+    $openCircleY = New-Object System.Collections.Generic.List[double]
+    foreach ($i in 0..58) {
+        $angle = 0.18 + ((2.0 * [Math]::PI - 0.38) * $i / 58.0)
+        $jitter = 4.0 * [Math]::Sin(5.0 * $angle)
+        $openCircleX.Add(1080.0 + (165.0 + $jitter) * [Math]::Cos($angle))
+        $openCircleY.Add(610.0 + (160.0 + $jitter) * [Math]::Sin($angle))
+    }
+
+    $handRectX = New-Object System.Collections.Generic.List[double]
+    $handRectY = New-Object System.Collections.Generic.List[double]
+    foreach ($i in 0..14) { $handRectX.Add(170.0 + 38.0 * $i); $handRectY.Add(515.0 + 5.0 * [Math]::Sin($i)) }
+    foreach ($i in 1..7) { $handRectX.Add(704.0 + 4.0 * [Math]::Sin($i)); $handRectY.Add(515.0 + 37.0 * $i) }
+    foreach ($i in 1..14) { $handRectX.Add(704.0 - 38.0 * $i); $handRectY.Add(774.0 + 5.0 * [Math]::Sin($i)) }
+    foreach ($i in 1..6) { $handRectX.Add(170.0 + 4.0 * [Math]::Sin($i)); $handRectY.Add(774.0 - 37.0 * $i) }
+
+    [double[]]$tearX = @(800, 850, 940, 1010, 1040, 1000, 900, 800, 700, 600, 560, 590, 650, 740, 800)
+    [double[]]$tearY = @(360, 430, 520, 620, 720, 790, 835, 850, 835, 790, 720, 620, 520, 430, 360)
+    $scribbleX = New-Object System.Collections.Generic.List[double]
+    $scribbleY = New-Object System.Collections.Generic.List[double]
+    foreach ($i in 0..80) {
+        $angle = 2.0 * [Math]::PI * $i / 80.0
+        $scribbleX.Add(800.0 + 220.0 * [Math]::Sin($angle))
+        $scribbleY.Add(450.0 + 150.0 * [Math]::Sin(2.0 * $angle))
+    }
+    $arcX = New-Object System.Collections.Generic.List[double]
+    $arcY = New-Object System.Collections.Generic.List[double]
+    foreach ($i in 0..48) {
+        $angle = 1.40 * [Math]::PI * $i / 48.0
+        $arcX.Add(800.0 + 180.0 * [Math]::Cos($angle))
+        $arcY.Add(450.0 + 180.0 * [Math]::Sin($angle))
+    }
+
     $line = Get-Recognition -X $lineX -Y $lineY
     $circle = Get-Recognition -X $circleX.ToArray() -Y $circleY.ToArray()
     $rectangle = Get-Recognition -X $rectX.ToArray() -Y $rectY.ToArray()
-    if ($null -eq $line -or $line.Type -ne 'Line' -or $null -eq $circle -or $circle.Type -ne 'Circle' -or $null -eq $rectangle -or $rectangle.Type -ne 'Rectangle') {
-        throw "Recognition self-test failed: line=$($line.Type), circle=$($circle.Type), rectangle=$($rectangle.Type)"
+    $openCircle = Get-Recognition -X $openCircleX.ToArray() -Y $openCircleY.ToArray()
+    $handRectangle = Get-Recognition -X $handRectX.ToArray() -Y $handRectY.ToArray()
+    $tear = Get-Recognition -X $tearX -Y $tearY
+    $scribble = Get-Recognition -X $scribbleX.ToArray() -Y $scribbleY.ToArray()
+    $arc = Get-Recognition -X $arcX.ToArray() -Y $arcY.ToArray()
+    if ($null -eq $line -or $line.Type -ne 'Line' -or
+        $null -eq $circle -or $circle.Type -ne 'Circle' -or
+        $null -eq $rectangle -or $rectangle.Type -ne 'Rectangle' -or
+        $null -eq $openCircle -or $openCircle.Type -ne 'Circle' -or
+        $null -eq $handRectangle -or $handRectangle.Type -ne 'Rectangle' -or
+        $null -ne $tear -or $null -ne $scribble -or $null -ne $arc) {
+        throw "Recognition self-test failed: line=$($line.Type), circle=$($circle.Type), rectangle=$($rectangle.Type), openCircle=$($openCircle.Type), handRectangle=$($handRectangle.Type), tear=$($tear.Type), scribble=$($scribble.Type), arc=$($arc.Type)"
     }
 
     $visual = New-Object System.Windows.Media.DrawingVisual
@@ -137,7 +180,7 @@ function Write-SelfTestImage {
     $bitmap = New-Object System.Windows.Media.Imaging.RenderTargetBitmap(1600, 900, 96, 96, [System.Windows.Media.PixelFormats]::Pbgra32)
     $bitmap.Render($visual)
     Save-BitmapSource -Bitmap $bitmap -Path $Path
-    return @{ line = $line.Type; circle = $circle.Type; rectangle = $rectangle.Type }
+    return @{ line = $line.Type; circle = $circle.Type; rectangle = $rectangle.Type; openCircle = $openCircle.Type; handRectangle = $handRectangle.Type; rejected = @('tear', 'scribble', 'arc') }
 }
 
 if ($SelfTest) {
@@ -1110,6 +1153,40 @@ if ($UiSelfTest) {
                 throw 'Toolbar or page navigation controls are missing.'
             }
             if ($pageText.Text -ne '1 / 1' -or -not $penButton.IsEnabled) { throw 'Initial UI state is invalid.' }
+
+            $rightPoints = New-Object System.Collections.Generic.List[System.Windows.Point]
+            foreach ($i in 0..20) {
+                $rightPoints.Add((New-Object System.Windows.Point((180.0 + 48.0 * $i), (120.0 + 5.0 * [Math]::Sin($i)))))
+            }
+            $script:RightStroke = New-StylusStroke -Points $rightPoints -Attributes (New-DrawingAttributes -Color $script:RedColor -FitToCurve $true)
+            $script:IsSnapping = $true
+            try { $ink.Strokes.Add($script:RightStroke) }
+            finally { $script:IsSnapping = $false }
+            Finish-RightStroke -Point $rightPoints[$rightPoints.Count - 1]
+            if ($ink.Strokes.Count -ne 1 -or $ink.Strokes[0].DrawingAttributes.Color -ne $script:RedColor -or $ink.Strokes[0].StylusPoints.Count -ne 25) {
+                throw 'Right-button red stroke did not use automatic correction or preserve its color.'
+            }
+
+            $rightCirclePoints = New-Object System.Collections.Generic.List[System.Windows.Point]
+            foreach ($i in 0..58) {
+                $angle = 0.18 + ((2.0 * [Math]::PI - 0.38) * $i / 58.0)
+                $jitter = 4.0 * [Math]::Sin(5.0 * $angle)
+                $rightCirclePoints.Add((New-Object System.Windows.Point((1080.0 + (165.0 + $jitter) * [Math]::Cos($angle)), (420.0 + (160.0 + $jitter) * [Math]::Sin($angle)))))
+            }
+            $script:RightStroke = New-StylusStroke -Points $rightCirclePoints -Attributes (New-DrawingAttributes -Color $script:RedColor -FitToCurve $true)
+            $script:IsSnapping = $true
+            try { $ink.Strokes.Add($script:RightStroke) }
+            finally { $script:IsSnapping = $false }
+            Finish-RightStroke -Point $rightCirclePoints[$rightCirclePoints.Count - 1]
+            if ($ink.Strokes.Count -ne 2 -or $ink.Strokes[1].DrawingAttributes.Color -ne $script:RedColor -or $ink.Strokes[1].StylusPoints.Count -ne 97) {
+                throw 'Right-button red circle did not use automatic correction or preserve its color.'
+            }
+            $script:IsSnapping = $true
+            try { $ink.Strokes.Clear() }
+            finally { $script:IsSnapping = $false }
+            (Get-CurrentPage).UndoStack.Clear()
+            (Get-CurrentPage).RedoStack.Clear()
+
             $blackRectangle = New-ManualShapeStroke -Kind Rectangle -Start (New-Object System.Windows.Point(160, 180)) -End (New-Object System.Windows.Point(680, 500)) -Color ([System.Windows.Media.Colors]::Black)
             $redCircle = New-ManualShapeStroke -Kind Circle -Start (New-Object System.Windows.Point(920, 180)) -End (New-Object System.Windows.Point(1320, 580)) -Color $script:RedColor
             $linePoints = New-Object System.Collections.Generic.List[System.Windows.Point]
