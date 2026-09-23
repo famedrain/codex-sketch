@@ -13,6 +13,16 @@ if ($env:OS -ne 'Windows_NT') {
 
 $source = [System.IO.Path]::GetFullPath($PSScriptRoot)
 $destinationPath = [System.IO.Path]::GetFullPath($Destination)
+$protectedPaths = @(
+    [System.IO.Path]::GetPathRoot($destinationPath),
+    [System.IO.Path]::GetFullPath($env:USERPROFILE),
+    [System.IO.Path]::GetFullPath((Join-Path $env:USERPROFILE '.codex')),
+    [System.IO.Path]::GetFullPath((Join-Path $env:USERPROFILE '.codex\skills'))
+) | ForEach-Object { $_.TrimEnd('\') }
+
+if ($protectedPaths -contains $destinationPath.TrimEnd('\')) {
+    throw "Refusing to install into or replace a protected directory: $destinationPath"
+}
 
 if ($source.TrimEnd('\') -eq $destinationPath.TrimEnd('\')) {
     Write-Host "Sketch is already located at $destinationPath"
@@ -21,17 +31,18 @@ if ($source.TrimEnd('\') -eq $destinationPath.TrimEnd('\')) {
 
 if (Test-Path -LiteralPath $destinationPath) {
     if (-not $Force) {
-        throw "Destination already exists: $destinationPath. Re-run with -Force to back it up and install this version."
+        throw "Destination already exists: $destinationPath. Re-run with -Force to replace it with this version."
     }
-    $backupPath = "$destinationPath.backup-$([DateTime]::Now.ToString('yyyyMMdd-HHmmss'))"
-    Move-Item -LiteralPath $destinationPath -Destination $backupPath
-    Write-Host "Previous version backed up to $backupPath"
+    Remove-Item -LiteralPath $destinationPath -Recurse -Force
+    Write-Host "Previous version removed from $destinationPath"
 }
 
 $parent = [System.IO.Path]::GetDirectoryName($destinationPath)
 [System.IO.Directory]::CreateDirectory($parent) | Out-Null
 [System.IO.Directory]::CreateDirectory($destinationPath) | Out-Null
-Get-ChildItem -LiteralPath $source -Force | Copy-Item -Destination $destinationPath -Recurse -Force
+Copy-Item -LiteralPath (Join-Path $source 'SKILL.md') -Destination $destinationPath -Force
+Copy-Item -LiteralPath (Join-Path $source 'agents') -Destination $destinationPath -Recurse -Force
+Copy-Item -LiteralPath (Join-Path $source 'scripts') -Destination $destinationPath -Recurse -Force
 
 if (-not $SkipSelfTest) {
     $testPath = Join-Path ([System.IO.Path]::GetTempPath()) ("sketch-install-test-{0}.png" -f [Guid]::NewGuid().ToString('N'))

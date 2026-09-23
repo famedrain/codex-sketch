@@ -39,12 +39,16 @@ The exported sketches are temporary current-conversation artifacts. Never copy t
 - `2`: eraser
 - `3`: toggle automatic line/circle/ellipse/rectangle correction
 - `4`: show or hide the built-in shortcut guide
-- `Ctrl+N`: save the current non-empty sketch and start the next one; up to six sketches, with empty pages ignored
+- Click the top buttons: switch pen, eraser, or automatic correction; the selected states stay visible
+- Click the bottom arrows or press `PageUp` / `PageDown`: move between editable pages
+- `Ctrl+N`: append a new page after drawing on the current page; up to six pages
+- `Ctrl+Delete`: confirm and delete the current page; when only one page remains, clear it
 - `Ctrl+Z`: undo; after automatic correction, the first undo restores the original stroke and the second removes it
+- `Ctrl+Y` or `Ctrl+Shift+Z`: redo
 - `Ctrl+Backspace`: ask for confirmation, then clear
 - `Ctrl+Enter`: open the optional note field; press it again to finish with the note
 - `Ctrl+Shift+Enter`: finish immediately without opening the note field
-- `Esc`: cancel
+- `Esc`: close help or the note field, otherwise cancel; unsent content requires confirmation
 
 If the user asks how to operate the canvas, answer from this list. The canvas is intentionally limited: do not imply that it supports placed text, selection, arbitrary colors, paste, layers, or editing placed objects.
 
