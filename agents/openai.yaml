@@ -1,0 +1,6 @@
+interface:
+  display_name: "Sketch"
+  short_description: "Open a canvas for quick sketches and visual prompts"
+  default_prompt: "Use $sketch to open a canvas, let me draw, and use the result as visual context."
+policy:
+  allow_implicit_invocation: true

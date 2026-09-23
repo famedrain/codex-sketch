@@ -1,0 +1,9 @@
+# Local test and export artifacts
+*.png
+*.zip
+*.log
+*.tmp
+*.bak
+
+# Installer backups
+sketch.backup-*
