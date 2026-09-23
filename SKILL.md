@@ -26,6 +26,8 @@ Natural-language requests that clearly ask to open a canvas for the user should 
    - `cancelled`: stop sketch-dependent work and say that no sketch was added.
    - `error`: report the returned message and do not claim that an image was created.
 
+The exported sketch is a temporary current-conversation artifact. Never copy it into the skill directory or another workspace, never stage, commit, or push it with Git, and never upload it to GitHub or another external storage service.
+
 ## Canvas controls
 
 - Left drag: draw in black
@@ -45,4 +47,4 @@ Natural-language requests that clearly ask to open a canvas for the user should 
 
 If the user asks how to operate the canvas, answer from this list. The canvas is intentionally limited: do not imply that it supports placed text, selection, arbitrary colors, paste, layers, or editing placed objects.
 
-This skill is Windows-only and uses local WPF components included with Windows PowerShell 5.1. It does not use the network, an API key, cloud storage, or clipboard data. Do not substitute an AI-generated image for the user's sketch, and do not claim the drawing is visible unless the response actually embeds it.
+This skill is Windows-only and uses local WPF components included with Windows PowerShell 5.1. It does not use the network, an API key, cloud storage, or clipboard data. The local temporary PNG exists only so Codex can read and display it in the current conversation; it is not a repository artifact. Do not substitute an AI-generated image for the user's sketch, and do not claim the drawing is visible unless the response actually embeds it.

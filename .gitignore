@@ -1,5 +1,7 @@
-# Local test and export artifacts
+# User sketches are conversation-only and must never enter the repository
 *.png
+
+# Local test and export artifacts
 *.zip
 *.log
 *.tmp

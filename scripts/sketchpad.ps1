@@ -12,9 +12,15 @@ if ($env:OS -ne 'Windows_NT') {
     exit 1
 }
 
-if ([string]::IsNullOrWhiteSpace($OutputPath)) {
+if (-not $SelfTest -and -not $UiSelfTest) {
+    # User sketches are conversation-only artifacts. Always keep them outside
+    # the skill/workspace so they cannot be staged or committed by accident.
     $outputDirectory = Join-Path ([System.IO.Path]::GetTempPath()) 'codex-sketch'
     $OutputPath = Join-Path $outputDirectory ("sketch-{0}.png" -f [DateTime]::Now.ToString('yyyyMMdd-HHmmss-fff'))
+}
+elseif ([string]::IsNullOrWhiteSpace($OutputPath)) {
+    $outputDirectory = Join-Path ([System.IO.Path]::GetTempPath()) 'codex-sketch'
+    $OutputPath = Join-Path $outputDirectory ("sketch-test-{0}.png" -f [DateTime]::Now.ToString('yyyyMMdd-HHmmss-fff'))
 }
 
 $OutputPath = [System.IO.Path]::GetFullPath($OutputPath)
