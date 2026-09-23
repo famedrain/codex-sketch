@@ -18,6 +18,7 @@
 - 始终导出 1600×900 PNG，不因窗口大小降低输出分辨率
 - 草图只作为当前 Codex 对话的本地附件，不进入代码仓库或 GitHub
 - 完全本地运行，不依赖第三方包、网络、API Key、云存储或剪贴板
+- 通过专用启动器把画板放到 Windows 可见桌面，避免 Codex 显示“正在等待”但用户看不到窗口
 
 ## 环境要求
 
@@ -138,6 +139,7 @@ powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File .\scripts\sketchpad
 codex-sketch/
 ├─ SKILL.md                           Skill 的行为和调用说明
 ├─ agents/openai.yaml                 Codex 展示信息与自然语言调用策略
+├─ scripts/launch-sketchpad.ps1       可见桌面启动器与结果中继
 ├─ scripts/sketchpad.ps1              WPF 画板、导出和自检入口
 ├─ scripts/SketchShapeRecognizer.cs   图形识别源码
 ├─ scripts/SketchShapeRecognizer.dll  预编译识别组件
@@ -149,6 +151,8 @@ codex-sketch/
 ### 自然语言没有打开画板
 
 先确认 Skill 已安装到 `%USERPROFILE%\.codex\skills\sketch`，然后新建 Codex 任务或重启 Codex。也可以先用 `$sketch` 验证显式调用。
+
+如果 Codex 已显示“画板已打开”并持续等待，但桌面上没有窗口，通常是旧版直接从 Codex 的隐藏桌面启动了 WPF。最新版必须执行 `scripts\launch-sketchpad.ps1`，不能直接执行 `sketchpad.ps1`；重新运行 `install.ps1 -Force` 后再开新任务即可。
 
 ### PowerShell 阻止脚本运行
 

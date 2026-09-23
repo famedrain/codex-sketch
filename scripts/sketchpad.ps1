@@ -1,5 +1,6 @@
 param(
     [string]$OutputPath,
+    [string]$ResultPath,
     [switch]$SelfTest,
     [switch]$UiSelfTest
 )
@@ -7,9 +8,35 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+function Write-SketchResult {
+    param(
+        [Parameter(Mandatory = $true)]$Value,
+        [int]$Depth = 4
+    )
+    $json = $Value | ConvertTo-Json -Depth $Depth -Compress
+    if (-not [string]::IsNullOrWhiteSpace($ResultPath)) {
+        $fullResultPath = [System.IO.Path]::GetFullPath($ResultPath)
+        [System.IO.Directory]::CreateDirectory([System.IO.Path]::GetDirectoryName($fullResultPath)) | Out-Null
+        $temporaryResultPath = "$fullResultPath.tmp-$([Guid]::NewGuid().ToString('N'))"
+        [System.IO.File]::WriteAllText($temporaryResultPath, $json, (New-Object System.Text.UTF8Encoding($false)))
+        [System.IO.File]::Move($temporaryResultPath, $fullResultPath)
+    }
+    Write-Output $json
+}
+
 if ($env:OS -ne 'Windows_NT') {
-    [pscustomobject]@{ status = 'error'; message = 'Sketch supports Windows only.' } | ConvertTo-Json -Compress
+    Write-SketchResult ([pscustomobject]@{ status = 'error'; message = 'Sketch supports Windows only.' })
     exit 1
+}
+
+if (-not $SelfTest -and -not $UiSelfTest) {
+    $script:InstanceMutex = New-Object System.Threading.Mutex($false, 'Local\CodexSketchCanvas')
+    try { $script:HasInstanceLock = $script:InstanceMutex.WaitOne(0) }
+    catch [System.Threading.AbandonedMutexException] { $script:HasInstanceLock = $true }
+    if (-not $script:HasInstanceLock) {
+        Write-SketchResult ([pscustomobject]@{ status = 'error'; message = 'A sketch canvas is already open.' })
+        exit 1
+    }
 }
 
 if (-not $SelfTest -and -not $UiSelfTest) {
@@ -33,7 +60,7 @@ try {
     Add-Type -AssemblyName System.Xaml
 }
 catch {
-    [pscustomobject]@{ status = 'error'; message = "WPF could not be loaded: $($_.Exception.Message)" } | ConvertTo-Json -Compress
+    Write-SketchResult ([pscustomobject]@{ status = 'error'; message = "WPF could not be loaded: $($_.Exception.Message)" })
     exit 1
 }
 
@@ -50,7 +77,7 @@ try {
     }
 }
 catch {
-    [pscustomobject]@{ status = 'error'; message = "Shape recognizer could not be loaded: $($_.Exception.Message)" } | ConvertTo-Json -Compress
+    Write-SketchResult ([pscustomobject]@{ status = 'error'; message = "Shape recognizer could not be loaded: $($_.Exception.Message)" })
     exit 1
 }
 
@@ -116,11 +143,11 @@ function Write-SelfTestImage {
 if ($SelfTest) {
     try {
         $test = Write-SelfTestImage -Path $OutputPath
-        [pscustomobject]@{ status = 'self_test'; path = $OutputPath; width = 1600; height = 900; recognized = $test } | ConvertTo-Json -Depth 4 -Compress
+        Write-SketchResult ([pscustomobject]@{ status = 'self_test'; path = $OutputPath; width = 1600; height = 900; recognized = $test })
         exit 0
     }
     catch {
-        [pscustomobject]@{ status = 'error'; message = $_.Exception.Message } | ConvertTo-Json -Compress
+        Write-SketchResult ([pscustomobject]@{ status = 'error'; message = $_.Exception.Message })
         exit 1
     }
 }
@@ -210,7 +237,7 @@ try {
     $window = [Windows.Markup.XamlReader]::Load($reader)
 }
 catch {
-    [pscustomobject]@{ status = 'error'; message = "Canvas UI could not be created: $($_.Exception.Message)" } | ConvertTo-Json -Compress
+    Write-SketchResult ([pscustomobject]@{ status = 'error'; message = "Canvas UI could not be created: $($_.Exception.Message)" })
     exit 1
 }
 
@@ -1144,22 +1171,22 @@ try {
             }
         }
         $resultStatus = if ($UiSelfTest) { 'ui_self_test' } else { 'completed' }
-        [pscustomobject]@{
+        Write-SketchResult ([pscustomobject]@{
             status = $resultStatus
             path = $script:SavedPaths[0]
             paths = @($script:SavedPaths)
             width = $script:ExportWidth
             height = $script:ExportHeight
             note = $script:Note
-        } | ConvertTo-Json -Compress
+        })
     }
     else {
         Remove-SavedSketchFiles
-        [pscustomobject]@{ status = 'cancelled' } | ConvertTo-Json -Compress
+        Write-SketchResult ([pscustomobject]@{ status = 'cancelled' })
     }
 }
 catch {
     Remove-SavedSketchFiles
-    [pscustomobject]@{ status = 'error'; message = $_.Exception.Message } | ConvertTo-Json -Compress
+    Write-SketchResult ([pscustomobject]@{ status = 'error'; message = $_.Exception.Message })
     exit 1
 }

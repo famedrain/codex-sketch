@@ -14,13 +14,13 @@ Natural-language requests that clearly ask to open a canvas for the user should 
 ## Run
 
 1. Tell the user the canvas is opening and this turn will wait for completion or cancellation.
-2. Resolve this skill directory and run its bundled script with Windows PowerShell in STA mode:
+2. Resolve this skill directory and run its bundled visible-desktop launcher with Windows PowerShell:
 
    ```powershell
-   powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File <skill-directory>\scripts\sketchpad.ps1
+   powershell.exe -NoProfile -ExecutionPolicy Bypass -File <skill-directory>\scripts\launch-sketchpad.ps1
    ```
 
-   A desktop window may require approval. Request only the permission needed to launch this bundled local script. Never launch a second canvas while the first process is still running.
+   A desktop window may require approval. Request only the permission needed to launch this bundled local script. The launcher is required because Codex commands can run on a hidden Windows desktop; it creates the WPF canvas on the user's visible desktop and relays the final JSON result. Never bypass it for an interactive sketch, and never launch a second canvas while the first process is still running.
 3. Wait for the single JSON result from the process:
    - `completed`: use `paths` in order when present, otherwise fall back to the legacy `path`. Inspect every returned image, treat the images and optional returned `note` as user-provided context for the current request, and continue without asking the user to attach them again. Embed every PNG in the final response with Markdown image syntax and its absolute local path, converting backslashes to forward slashes.
    - `cancelled`: stop sketch-dependent work and say that no sketch was added.
