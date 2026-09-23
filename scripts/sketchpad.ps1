@@ -153,7 +153,7 @@ $xaml = @'
       <StackPanel>
         <TextBlock Text="Sketch shortcuts / &#x5FEB;&#x6377;&#x952E;" Foreground="White" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,12"/>
         <TextBlock Foreground="#F8FAFC" FontSize="12" LineHeight="22" TextWrapping="NoWrap"
-                   Text="Left drag / &#x5DE6;&#x952E;&#x62D6;&#x52A8;       Black pen / &#x9ED1;&#x7B14;&#x0a;Right drag / &#x53F3;&#x952E;&#x62D6;&#x52A8;      Red pen / &#x7EA2;&#x7B14;&#x0a;Shift + drag / &#x62D6;&#x52A8;          Rectangle / &#x77E9;&#x5F62;&#x0a;Alt + drag / &#x62D6;&#x52A8;            Circle / &#x5706;&#x0a;Mouse wheel / &#x6EDA;&#x8F6E;            Pen size / &#x7B14;&#x7C97;&#x0a;1 / 2                         Pen / eraser  &#x753B;&#x7B14; / &#x6A61;&#x76AE;&#x0a;3                             Auto-fix / &#x81EA;&#x52A8;&#x4FEE;&#x590D;&#x0a;4                             Help / &#x5E2E;&#x52A9;&#x0a;Ctrl+Z                        Undo / &#x64A4;&#x9500;&#x0a;Ctrl+Backspace                Clear with confirmation / &#x786E;&#x8BA4;&#x540E;&#x6E05;&#x7A7A;&#x0a;Ctrl+Enter                    Add note, then finish / &#x6DFB;&#x52A0;&#x8BF4;&#x660E;&#x540E;&#x5B8C;&#x6210;&#x0a;Ctrl+Shift+Enter              Quick finish / &#x5FEB;&#x901F;&#x5B8C;&#x6210;&#x0a;Esc                           Back or cancel / &#x8FD4;&#x56DE;&#x6216;&#x53D6;&#x6D88;"/>
+                   Text="Left drag / &#x5DE6;&#x952E;&#x62D6;&#x52A8;       Black pen / &#x9ED1;&#x7B14;&#x0a;Right drag / &#x53F3;&#x952E;&#x62D6;&#x52A8;      Red pen / &#x7EA2;&#x7B14;&#x0a;Shift + drag / &#x62D6;&#x52A8;          Rectangle / &#x77E9;&#x5F62;&#x0a;Alt + drag / &#x62D6;&#x52A8;            Circle / &#x5706;&#x0a;Mouse wheel / &#x6EDA;&#x8F6E;            Pen size / &#x7B14;&#x7C97;&#x0a;1 / 2                         Pen / eraser  &#x753B;&#x7B14; / &#x6A61;&#x76AE;&#x0a;3                             Auto-fix / &#x81EA;&#x52A8;&#x4FEE;&#x590D;&#x0a;4                             Help / &#x5E2E;&#x52A9;&#x0a;Ctrl+N                        Save + next page / &#x4FDD;&#x5B58;&#x5E76;&#x65B0;&#x5EFA;&#x4E0B;&#x4E00;&#x5F20;&#x0a;Ctrl+Z                        Undo / &#x64A4;&#x9500;&#x0a;Ctrl+Backspace                Clear with confirmation / &#x786E;&#x8BA4;&#x540E;&#x6E05;&#x7A7A;&#x0a;Ctrl+Enter                    Add note, then finish / &#x6DFB;&#x52A0;&#x8BF4;&#x660E;&#x540E;&#x5B8C;&#x6210;&#x0a;Ctrl+Shift+Enter              Quick finish / &#x5FEB;&#x901F;&#x5B8C;&#x6210;&#x0a;Esc                           Back or cancel / &#x8FD4;&#x56DE;&#x6216;&#x53D6;&#x6D88;"/>
       </StackPanel>
     </Border>
 
@@ -162,7 +162,7 @@ $xaml = @'
               Background="#FFFDFD" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="18" Padding="28">
         <StackPanel>
           <TextBlock Text="Add a note / &#x6DFB;&#x52A0;&#x8BF4;&#x660E;" Foreground="#0F172A" FontSize="23" FontWeight="SemiBold"/>
-          <TextBlock Text="Optional context for Codex / &#x53EF;&#x9009;&#xFF0C;&#x5C06;&#x4E0E;&#x8349;&#x56FE;&#x4E00;&#x8D77;&#x4EA4;&#x7ED9; Codex" Foreground="#64748B" FontSize="13" Margin="0,6,0,14"/>
+          <TextBlock Text="Optional context for all sketches / &#x53EF;&#x9009;&#xFF0C;&#x5C06;&#x4E0E;&#x5168;&#x90E8;&#x8349;&#x56FE;&#x4E00;&#x8D77;&#x4EA4;&#x7ED9; Codex" Foreground="#64748B" FontSize="13" Margin="0,6,0,14"/>
           <TextBox x:Name="NoteBox" Height="150" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
                    FontSize="16" Padding="12" BorderBrush="#94A3B8" BorderThickness="1" Background="White" Foreground="#0F172A"/>
           <TextBlock Text="Ctrl+Enter: submit / &#x63D0;&#x4EA4;    Esc: back / &#x8FD4;&#x56DE;" Foreground="#64748B" FontSize="13" HorizontalAlignment="Right" Margin="0,12,0,0"/>
@@ -198,6 +198,8 @@ $script:Completed = $false
 $script:ExportWidth = 0
 $script:ExportHeight = 0
 $script:Note = ''
+$script:SavedPaths = New-Object System.Collections.Generic.List[string]
+$script:MaxPages = 6
 $script:AutoFix = $true
 $script:IsSnapping = $false
 $script:CurrentMode = 'Pen'
@@ -236,6 +238,8 @@ $script:Ui = @{
     FixedCircle = Convert-UiText 'Fixed: circle / \u5df2\u4fee\u6b63\uff1a\u5706'
     FixedEllipse = Convert-UiText 'Fixed: ellipse / \u5df2\u4fee\u6b63\uff1a\u692d\u5706'
     FixedRectangle = Convert-UiText 'Fixed: rectangle / \u5df2\u4fee\u6b63\uff1a\u77e9\u5f62'
+    EmptyPage = Convert-UiText 'Draw something first / \u8bf7\u5148\u753b\u4e00\u4e9b\u5185\u5bb9'
+    MaxPages = Convert-UiText 'Maximum 6 sketches / \u6700\u591a\u652f\u6301 6 \u5f20\u8349\u56fe'
 }
 
 function Set-DrawingMode {
@@ -535,13 +539,65 @@ function Invoke-AutoFix {
     Show-Status $message
 }
 
+function Get-PageOutputPath {
+    param([int]$PageNumber)
+    if ($PageNumber -eq 1) { return $OutputPath }
+
+    $directory = [System.IO.Path]::GetDirectoryName($OutputPath)
+    $name = [System.IO.Path]::GetFileNameWithoutExtension($OutputPath)
+    $extension = [System.IO.Path]::GetExtension($OutputPath)
+    return Join-Path $directory ("{0}-{1:D2}{2}" -f $name, $PageNumber, $extension)
+}
+
 function Export-Canvas {
+    param([Parameter(Mandatory = $true)][string]$Path)
     $ink.UpdateLayout()
     $bitmap = New-Object System.Windows.Media.Imaging.RenderTargetBitmap(1600, 900, 96, 96, [System.Windows.Media.PixelFormats]::Pbgra32)
     $bitmap.Render($ink)
-    Save-BitmapSource -Bitmap $bitmap -Path $OutputPath
+    Save-BitmapSource -Bitmap $bitmap -Path $Path
     $script:ExportWidth = 1600
     $script:ExportHeight = 900
+}
+
+function Save-CurrentPage {
+    if ($ink.Strokes.Count -eq 0) { return $false }
+    if ($script:SavedPaths.Count -ge $script:MaxPages) { return $false }
+
+    $pageNumber = $script:SavedPaths.Count + 1
+    $pagePath = Get-PageOutputPath -PageNumber $pageNumber
+    Export-Canvas -Path $pagePath
+    $script:SavedPaths.Add($pagePath)
+    return $true
+}
+
+function Start-NewPage {
+    if ($ink.Strokes.Count -eq 0) {
+        Show-Status $script:Ui.EmptyPage
+        return
+    }
+    if ($script:SavedPaths.Count -ge ($script:MaxPages - 1)) {
+        Show-Status $script:Ui.MaxPages
+        return
+    }
+
+    Save-CurrentPage | Out-Null
+    $script:IsSnapping = $true
+    try { $ink.Strokes.Clear() }
+    finally { $script:IsSnapping = $false }
+    $script:UndoStack.Clear()
+    $helpPanel.Visibility = [System.Windows.Visibility]::Collapsed
+    $nextPage = $script:SavedPaths.Count + 1
+    Show-Status (Convert-UiText "Saved $($script:SavedPaths.Count)/$($script:MaxPages); drawing $nextPage / \u5df2\u4fdd\u5b58 $($script:SavedPaths.Count)/$($script:MaxPages)\uff0c\u6b63\u5728\u753b\u7b2c $nextPage \u5f20")
+    $ink.Focus() | Out-Null
+}
+
+function Remove-SavedSketchFiles {
+    foreach ($path in $script:SavedPaths) {
+        if (Test-Path -LiteralPath $path) {
+            Remove-Item -LiteralPath $path -Force -ErrorAction SilentlyContinue
+        }
+    }
+    $script:SavedPaths.Clear()
 }
 
 function Show-NoteOverlay {
@@ -559,7 +615,14 @@ function Hide-NoteOverlay {
 function Complete-Sketch {
     try {
         $script:Note = $noteBox.Text.Trim()
-        Export-Canvas
+        if ($ink.Strokes.Count -gt 0) {
+            Save-CurrentPage | Out-Null
+        }
+        if ($script:SavedPaths.Count -eq 0) {
+            Hide-NoteOverlay
+            Show-Status $script:Ui.EmptyPage
+            return
+        }
         $script:Completed = $true
         $window.DialogResult = $true
         $window.Close()
@@ -708,6 +771,11 @@ $window.Add_PreviewKeyDown({
         $eventArgs.Handled = $true
         return
     }
+    elseif ($ctrl -and $eventArgs.Key -eq [System.Windows.Input.Key]::N) {
+        Start-NewPage
+        $eventArgs.Handled = $true
+        return
+    }
     if ($eventArgs.Key -eq [System.Windows.Input.Key]::D4 -or $eventArgs.Key -eq [System.Windows.Input.Key]::NumPad4) {
         $helpPanel.Visibility = if ($helpPanel.Visibility -eq [System.Windows.Visibility]::Visible) { [System.Windows.Visibility]::Collapsed } else { [System.Windows.Visibility]::Visible }
         $eventArgs.Handled = $true
@@ -773,6 +841,12 @@ if ($UiSelfTest) {
                 $ink.Strokes.Add($redLine)
             }
             finally { $script:IsSnapping = $false }
+            Start-NewPage
+
+            $secondPage = New-ManualShapeStroke -Kind Circle -Start (New-Object System.Windows.Point(520, 220)) -End (New-Object System.Windows.Point(1080, 780)) -Color ([System.Windows.Media.Colors]::Black)
+            $script:IsSnapping = $true
+            try { $ink.Strokes.Add($secondPage) }
+            finally { $script:IsSnapping = $false }
             $noteBox.Text = 'ui-self-test note'
             Complete-Sketch
         }
@@ -785,15 +859,29 @@ if ($UiSelfTest) {
 
 try {
     $null = $window.ShowDialog()
-    if ($script:Completed -and (Test-Path -LiteralPath $OutputPath)) {
+    if ($script:Completed) {
+        foreach ($path in $script:SavedPaths) {
+            if (-not (Test-Path -LiteralPath $path)) {
+                throw "Sketch export is missing: $path"
+            }
+        }
         $resultStatus = if ($UiSelfTest) { 'ui_self_test' } else { 'completed' }
-        [pscustomobject]@{ status = $resultStatus; path = $OutputPath; width = $script:ExportWidth; height = $script:ExportHeight; note = $script:Note } | ConvertTo-Json -Compress
+        [pscustomobject]@{
+            status = $resultStatus
+            path = $script:SavedPaths[0]
+            paths = @($script:SavedPaths)
+            width = $script:ExportWidth
+            height = $script:ExportHeight
+            note = $script:Note
+        } | ConvertTo-Json -Compress
     }
     else {
+        Remove-SavedSketchFiles
         [pscustomobject]@{ status = 'cancelled' } | ConvertTo-Json -Compress
     }
 }
 catch {
+    Remove-SavedSketchFiles
     [pscustomobject]@{ status = 'error'; message = $_.Exception.Message } | ConvertTo-Json -Compress
     exit 1
 }

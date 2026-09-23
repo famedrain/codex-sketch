@@ -36,6 +36,7 @@ Get-ChildItem -LiteralPath $source -Force | Copy-Item -Destination $destinationP
 if (-not $SkipSelfTest) {
     $testPath = Join-Path ([System.IO.Path]::GetTempPath()) ("sketch-install-test-{0}.png" -f [Guid]::NewGuid().ToString('N'))
     $uiTestPath = Join-Path ([System.IO.Path]::GetTempPath()) ("sketch-ui-test-{0}.png" -f [Guid]::NewGuid().ToString('N'))
+    $uiTestPaths = @()
     try {
         $json = & powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File (Join-Path $destinationPath 'scripts\sketchpad.ps1') -SelfTest -OutputPath $testPath
         $result = $json | ConvertFrom-Json
@@ -44,13 +45,20 @@ if (-not $SkipSelfTest) {
         }
         $uiJson = & powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File (Join-Path $destinationPath 'scripts\sketchpad.ps1') -UiSelfTest -OutputPath $uiTestPath
         $uiResult = $uiJson | ConvertFrom-Json
-        if ($uiResult.status -ne 'ui_self_test' -or -not (Test-Path -LiteralPath $uiTestPath)) {
+        $uiTestPaths = @($uiResult.paths)
+        $allUiPathsExist = $uiTestPaths.Count -eq 2
+        foreach ($path in $uiTestPaths) {
+            if (-not (Test-Path -LiteralPath $path)) { $allUiPathsExist = $false }
+        }
+        if ($uiResult.status -ne 'ui_self_test' -or -not $allUiPathsExist) {
             throw "UI self-test did not complete successfully: $uiJson"
         }
     }
     finally {
         if (Test-Path -LiteralPath $testPath) { Remove-Item -LiteralPath $testPath -Force }
-        if (Test-Path -LiteralPath $uiTestPath) { Remove-Item -LiteralPath $uiTestPath -Force }
+        foreach ($path in @($uiTestPath) + $uiTestPaths) {
+            if (Test-Path -LiteralPath $path) { Remove-Item -LiteralPath $path -Force }
+        }
     }
 }
 
